@@ -2,6 +2,10 @@
 
 Move all messages from one SQS queue, to another.
 
+## Installation
+
+    go get github.com/scottjbarr/sqsmv
+
 
 ## Configuration
 
@@ -26,8 +30,6 @@ Create some SQS messages to play with using the AWS CLI.
             --message-body "{\"id\": $i}"
     done
 
-
-Messages
 
 ## License
 
