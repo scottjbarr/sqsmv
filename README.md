@@ -11,7 +11,9 @@ environment variables must be set.
 
 ## Usage
 
-    sqsmv -src blah -dest blah
+Supply source and destination URL endpoints.
+
+    sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b
 
 
 ## License
