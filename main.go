@@ -40,11 +40,13 @@ func main() {
 
 	maxMessages := int64(10)
 	waitTime := int64(0)
+	messageAttributeNames := aws.StringSlice([]string{"All"})
 
 	rmin := &sqs.ReceiveMessageInput{
-		QueueUrl:            src,
-		MaxNumberOfMessages: &maxMessages,
-		WaitTimeSeconds:     &waitTime,
+		QueueUrl:              src,
+		MaxNumberOfMessages:   &maxMessages,
+		WaitTimeSeconds:       &waitTime,
+		MessageAttributeNames: messageAttributeNames,
 	}
 
 	// loop as long as there are messages on the queue
@@ -71,8 +73,9 @@ func main() {
 
 				// write the message to the destination queue
 				smi := sqs.SendMessageInput{
-					MessageBody: m.Body,
-					QueueUrl:    dest,
+					MessageAttributes: m.MessageAttributes,
+					MessageBody:       m.Body,
+					QueueUrl:          dest,
 				}
 
 				_, err := client.SendMessage(&smi)
