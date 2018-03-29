@@ -29,6 +29,12 @@ Supply source and destination URL endpoints.
     sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b
 
 
+## Docker Image
+
+You can run the application with the `docker` command:
+
+`docker run -ti -e AWS_REGION -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID --name sqsmv <IMAGE_NAME> -src (...) -dest (...)`
+
 ## Seeing is believing :)
 
 Create some SQS messages to play with using the AWS CLI.
