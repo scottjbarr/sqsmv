@@ -2,9 +2,18 @@
 
 Move all messages from one SQS queue, to another.
 
+
 ## Installation
 
+### Source
+
     go get github.com/scottjbarr/sqsmv
+
+
+### Binaries
+
+Download the appropriate binary from the
+[Releases](https://github.com/scottjbarr/sqsmv/releases) page.
 
 
 ## Configuration
