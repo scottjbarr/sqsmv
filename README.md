@@ -18,7 +18,7 @@ Download the appropriate binary from the
 
 ## Configuration
 
-The `AWS_SECRET_ACCESS_KEY` and `AWS_ACCESS_KEY_ID` environment variables must be set, except for EC2 instances with IAM roles.
+The `AWS_SECRET_ACCESS_KEY` and `AWS_ACCESS_KEY_ID` environment variables must be set.
 
 ## Usage
 

@@ -22,9 +22,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Printf("source queue url: %v", *src)
-	log.Printf("destination queue url: %v", *dest)
-
 	srcClient := sqs.New(session.New(), aws.NewConfig().WithRegion(getRegionFromQueueURL(*src)))
 	destClient := sqs.New(session.New(), aws.NewConfig().WithRegion(getRegionFromQueueURL(*dest)))
 
