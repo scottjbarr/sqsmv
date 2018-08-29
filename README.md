@@ -18,9 +18,7 @@ Download the appropriate binary from the
 
 ## Configuration
 
-The `AWS_SECRET_ACCESS_KEY`, `AWS_ACCESS_KEY_ID`, and ,`AWS_REGION`
-environment variables must be set.
-
+The `AWS_SECRET_ACCESS_KEY` and `AWS_ACCESS_KEY_ID` environment variables must be set.
 
 ## Usage
 

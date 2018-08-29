@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,8 +13,8 @@ import (
 )
 
 func main() {
-	src := flag.String("src", "", "source queue")
-	dest := flag.String("dest", "", "destination queue")
+	src := flag.String("src", "", "source queue url")
+	dest := flag.String("dest", "", "destination queue url")
 	flag.Parse()
 
 	if *src == "" || *dest == "" {
@@ -22,21 +22,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if os.Getenv("AWS_REGION") == "" {
-		fmt.Printf("AWS_REGION not set")
-		os.Exit(1)
-	}
-
-	region := os.Getenv("AWS_REGION")
-
-	log.Printf("source queue : %v", *src)
-	log.Printf("destination queue : %v", *dest)
-
-	config := &aws.Config{
-		Region: &region,
-	}
-
-	client := sqs.New(session.New(), config)
+	srcClient := sqs.New(session.New(), aws.NewConfig().WithRegion(getRegionFromQueueURL(*src)))
+	destClient := sqs.New(session.New(), aws.NewConfig().WithRegion(getRegionFromQueueURL(*dest)))
 
 	maxMessages := int64(10)
 	waitTime := int64(0)
@@ -51,7 +38,7 @@ func main() {
 
 	// loop as long as there are messages on the queue
 	for {
-		resp, err := client.ReceiveMessage(rmin)
+		resp, err := srcClient.ReceiveMessage(rmin)
 
 		if err != nil {
 			panic(err)
@@ -78,7 +65,7 @@ func main() {
 					QueueUrl:          dest,
 				}
 
-				_, err := client.SendMessage(&smi)
+				_, err := destClient.SendMessage(&smi)
 
 				if err != nil {
 					log.Printf("ERROR sending message to destination %v", err)
@@ -91,7 +78,7 @@ func main() {
 					ReceiptHandle: m.ReceiptHandle,
 				}
 
-				if _, err := client.DeleteMessage(dmi); err != nil {
+				if _, err := srcClient.DeleteMessage(dmi); err != nil {
 					log.Printf("ERROR dequeueing message ID %v : %v",
 						*m.ReceiptHandle,
 						err)
@@ -102,4 +89,8 @@ func main() {
 		// wait for all jobs from this batch...
 		wg.Wait()
 	}
+}
+
+func getRegionFromQueueURL(url string) string {
+    return strings.Split(url, ".")[1]
 }
