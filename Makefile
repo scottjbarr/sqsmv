@@ -23,7 +23,7 @@ prepare:
 
 tools:
 	go get golang.org/x/tools/cmd/goimports
-	go get github.com/golang/lint/golint
+	go get golang.org/x/lint/golint
 
 lint: golint vet goimports vet
 
