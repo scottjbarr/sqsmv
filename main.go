@@ -22,21 +22,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if os.Getenv("AWS_REGION") == "" {
-		fmt.Printf("AWS_REGION not set")
-		os.Exit(1)
-	}
-
-	region := os.Getenv("AWS_REGION")
-
 	log.Printf("source queue : %v", *src)
 	log.Printf("destination queue : %v", *dest)
 
-	config := &aws.Config{
-		Region: &region,
-	}
-
-	client := sqs.New(session.New(), config)
+	session := session.Must(
+		session.NewSessionWithOptions(
+			session.Options{
+				// enable automatic use of AWS_PROFILE like awscli and other tools do
+				SharedConfigState: session.SharedConfigEnable}))
+	client := sqs.New(session)
 
 	maxMessages := int64(10)
 	waitTime := int64(0)
