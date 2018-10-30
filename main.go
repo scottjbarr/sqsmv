@@ -28,7 +28,8 @@ func main() {
 	session := session.Must(
 		session.NewSessionWithOptions(
 			session.Options{
-				// enable automatic use of AWS_PROFILE like awscli and other tools do
+				// enable automatic use of AWS_PROFILE like awscli and other
+				// tools do.
 				SharedConfigState: session.SharedConfigEnable}))
 	client := sqs.New(session)
 
