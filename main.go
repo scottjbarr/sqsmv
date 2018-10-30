@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -25,12 +24,16 @@ func main() {
 	log.Printf("source queue : %v", *src)
 	log.Printf("destination queue : %v", *dest)
 
-	session := session.Must(
-		session.NewSessionWithOptions(
-			session.Options{
-				// enable automatic use of AWS_PROFILE like awscli and other
-				// tools do.
-				SharedConfigState: session.SharedConfigEnable}))
+	// enable automatic use of AWS_PROFILE like awscli and other tools do.
+	opts := session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}
+
+	session, err := session.NewSessionWithOptions(opts)
+	if err != nil {
+		panic(err)
+	}
+
 	client := sqs.New(session)
 
 	maxMessages := int64(10)
