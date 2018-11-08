@@ -28,6 +28,9 @@ Supply source and destination URL endpoints.
 
     sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b
 
+If you need to move messages between regions you can specify it on the command line:
+
+    sqsmv -src https://region1.queue.amazonaws.com/123/queue-a -srcRegion region1 -dest https://region2.queue.amazonaws.com/123/queue-b -destRegion region2
 
 ## Seeing is believing :)
 
