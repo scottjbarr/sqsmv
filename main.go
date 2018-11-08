@@ -16,6 +16,10 @@ func main() {
 	dest := flag.String("dest", "", "destination queue")
 	srcRegion := flag.String("srcRegion", "", "source region")
 	destRegion := flag.String("destRegion", "", "destination region")
+
+	var clientSrc *sqs.SQS
+	var clientDest *sqs.SQS
+
 	flag.Parse()
 
 	if *src == "" || *dest == "" {
@@ -47,15 +51,15 @@ func main() {
 	}
 
 	if *srcRegion == "" {
-		clientSrc := sqs.New(sessionSrc)
+		clientSrc = sqs.New(sessionSrc)
 	} else {
-		clientSrc := sqs.New(sessionSrc, aws.NewConfig().WithRegion(srcRegion))
+		clientSrc = sqs.New(sessionSrc, aws.NewConfig().WithRegion(*srcRegion))
 	}
 
 	if *destRegion == "" {
-		clientDest := sqs.New(sessionDst)
+		clientDest = sqs.New(sessionDst)
 	} else {
-		clientDest := sqs.New(sessionDst, aws.NewConfig().WithRegion(destRegion))
+		clientDest = sqs.New(sessionDst, aws.NewConfig().WithRegion(*destRegion))
 	}
 
 	maxMessages := int64(10)
