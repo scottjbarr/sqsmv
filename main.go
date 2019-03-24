@@ -47,6 +47,7 @@ func main() {
 		MessageAttributeNames: messageAttributeNames,
 	}
 
+	lastMessageCount := int(1)
 	// loop as long as there are messages on the queue
 	for {
 		resp, err := client.ReceiveMessage(rmin)
@@ -55,11 +56,13 @@ func main() {
 			panic(err)
 		}
 
-		if len(resp.Messages) == 0 {
+		if lastMessageCount == 0 && len(resp.Messages) == 0 {
+			// no messages returned twice now, the queue is probably empty
 			log.Printf("done")
 			return
 		}
 
+		lastMessageCount = len(resp.Messages);
 		log.Printf("received %v messages...", len(resp.Messages))
 
 		var wg sync.WaitGroup
