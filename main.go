@@ -28,6 +28,11 @@ func main() {
 	log.Printf("destination queue : %v", *dest)
 	log.Printf("max number of messages to move : %v", *maxMsgsToMove)
 
+	if *maxMsgsToMove <= 0 {
+		log.Printf("max number of message to move : %v must be greater than zero", *maxMsgsToMove)
+		os.Exit(1)
+	}
+
 	// enable automatic use of AWS_PROFILE like awscli and other tools do.
 	opts := session.Options{
 		SharedConfigState: session.SharedConfigEnable,
