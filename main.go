@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -14,6 +15,7 @@ import (
 func main() {
 	src := flag.String("src", "", "source queue")
 	dest := flag.String("dest", "", "destination queue")
+	limit := flag.Int("limit", -1, "limit number of messages moved (defaults to all)")
 	flag.Parse()
 
 	if *src == "" || *dest == "" {
@@ -21,8 +23,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	if *limit < -1 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	limitDescription := "no limit"
+
+	if *limit != -1 {
+		limitDescription = fmt.Sprintf("%d messages", *limit)
+	}
+
 	log.Printf("source queue : %v", *src)
 	log.Printf("destination queue : %v", *dest)
+	log.Printf("limit : %v", limitDescription)
 
 	// enable automatic use of AWS_PROFILE like awscli and other tools do.
 	opts := session.Options{
@@ -47,8 +61,10 @@ func main() {
 		MessageAttributeNames: messageAttributeNames,
 	}
 
+	movedMessageCount := 0
 	lastMessageCount := int(1)
-	// loop as long as there are messages on the queue
+
+	// loop as long as there are messages on the queue, or we've reached the limit
 	for {
 		resp, err := client.ReceiveMessage(rmin)
 
@@ -66,41 +82,50 @@ func main() {
 		log.Printf("received %v messages...", len(resp.Messages))
 
 		var wg sync.WaitGroup
-		wg.Add(len(resp.Messages))
 
 		for _, m := range resp.Messages {
 			go func(m *sqs.Message) {
-				defer wg.Done()
+				if (*limit == -1 || movedMessageCount <= *limit) {
+					wg.Add(1)
 
-				// write the message to the destination queue
-				smi := sqs.SendMessageInput{
-					MessageAttributes: m.MessageAttributes,
-					MessageBody:       m.Body,
-					QueueUrl:          dest,
-				}
+					movedMessageCount++
 
-				_, err := client.SendMessage(&smi)
+					defer wg.Done()
 
-				if err != nil {
-					log.Printf("ERROR sending message to destination %v", err)
-					return
-				}
+					// write the message to the destination queue
+					smi := sqs.SendMessageInput{
+						MessageAttributes: m.MessageAttributes,
+						MessageBody:	   m.Body,
+						QueueUrl:          dest,
+					}
 
-				// message was sent, dequeue from source queue
-				dmi := &sqs.DeleteMessageInput{
-					QueueUrl:      src,
-					ReceiptHandle: m.ReceiptHandle,
-				}
+					_, err := client.SendMessage(&smi)
 
-				if _, err := client.DeleteMessage(dmi); err != nil {
-					log.Printf("ERROR dequeueing message ID %v : %v",
-						*m.ReceiptHandle,
-						err)
+					if err != nil {
+						log.Printf("ERROR sending message to destination %v", err)
+						return
+					}
+
+					// message was sent, dequeue from source queue
+					dmi := &sqs.DeleteMessageInput{
+						QueueUrl:      src,
+						ReceiptHandle: m.ReceiptHandle,
+					}
+
+					if _, err := client.DeleteMessage(dmi); err != nil {
+						log.Printf("ERROR dequeueing message ID %v : %v",
+							*m.ReceiptHandle,
+							err)
+					}
 				}
 			}(m)
 		}
 
 		// wait for all jobs from this batch...
 		wg.Wait()
+
+		if (*limit != -1 && movedMessageCount >= *limit) {
+			break;
+		}
 	}
 }
