@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"math"
 	"os"
 	"sync"
 
@@ -12,8 +13,10 @@ import (
 )
 
 func main() {
+	maxInt := int(^uint(0) >> 1)
 	src := flag.String("src", "", "source queue")
 	dest := flag.String("dest", "", "destination queue")
+	maxMsgsToMove := flag.Int("max", maxInt, "max number of messages to move")
 	flag.Parse()
 
 	if *src == "" || *dest == "" {
@@ -23,6 +26,7 @@ func main() {
 
 	log.Printf("source queue : %v", *src)
 	log.Printf("destination queue : %v", *dest)
+	log.Printf("max number of messages to move : %v", *maxMsgsToMove)
 
 	// enable automatic use of AWS_PROFILE like awscli and other tools do.
 	opts := session.Options{
@@ -36,7 +40,7 @@ func main() {
 
 	client := sqs.New(session)
 
-	maxMessages := int64(10)
+	maxMessages := int64(math.Min(float64(*maxMsgsToMove), float64(10)))
 	waitTime := int64(0)
 	messageAttributeNames := aws.StringSlice([]string{"All"})
 
@@ -47,6 +51,7 @@ func main() {
 		MessageAttributeNames: messageAttributeNames,
 	}
 
+	count := int(0)
 	lastMessageCount := int(1)
 	// loop as long as there are messages on the queue
 	for {
@@ -56,7 +61,7 @@ func main() {
 			panic(err)
 		}
 
-		if lastMessageCount == 0 && len(resp.Messages) == 0 {
+		if count >= *maxMsgsToMove || (lastMessageCount == 0 && len(resp.Messages) == 0) {
 			// no messages returned twice now, the queue is probably empty
 			log.Printf("done")
 			return
@@ -69,6 +74,10 @@ func main() {
 		wg.Add(len(resp.Messages))
 
 		for _, m := range resp.Messages {
+			if count >= *maxMsgsToMove {
+				break
+			}
+
 			go func(m *sqs.Message) {
 				defer wg.Done()
 
@@ -96,6 +105,10 @@ func main() {
 					log.Printf("ERROR dequeueing message ID %v : %v",
 						*m.ReceiptHandle,
 						err)
+				}
+				count++
+				if count >= *maxMsgsToMove {
+					return
 				}
 			}(m)
 		}
