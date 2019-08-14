@@ -62,7 +62,7 @@ func main() {
 			return
 		}
 
-		lastMessageCount = len(resp.Messages);
+		lastMessageCount = len(resp.Messages)
 		log.Printf("received %v messages...", len(resp.Messages))
 
 		var wg sync.WaitGroup
