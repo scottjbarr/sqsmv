@@ -26,7 +26,10 @@ environment variables must be set.
 
 Supply source and destination URL endpoints.
 
-    sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b
+    sqsmv [-max 101] -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b
+    
+The optional [-max int] flag allows one to specify the maximum number of messages to be moved from source to target. 
+If specified, the number must be greater than zero. If not specified, all available messages in the source queue will be moved.
 
 
 ## Seeing is believing :)
