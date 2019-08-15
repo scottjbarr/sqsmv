@@ -14,6 +14,12 @@ import (
 func main() {
 	src := flag.String("src", "", "source queue")
 	dest := flag.String("dest", "", "destination queue")
+	srcRegion := flag.String("srcRegion", "", "source region")
+	destRegion := flag.String("destRegion", "", "destination region")
+
+	var clientSrc *sqs.SQS
+	var clientDest *sqs.SQS
+
 	flag.Parse()
 
 	if *src == "" || *dest == "" {
@@ -23,18 +29,38 @@ func main() {
 
 	log.Printf("source queue : %v", *src)
 	log.Printf("destination queue : %v", *dest)
+	if *srcRegion != "" {
+		log.Printf("source region : %v", *srcRegion)
+	}
+	if *destRegion != "" {
+		log.Printf("destination region : %v", *destRegion)
+	}
 
 	// enable automatic use of AWS_PROFILE like awscli and other tools do.
 	opts := session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}
 
-	session, err := session.NewSessionWithOptions(opts)
+	sessionSrc, err := session.NewSessionWithOptions(opts)
+	if err != nil {
+		panic(err)
+	}
+	sessionDst, err := session.NewSessionWithOptions(opts)
 	if err != nil {
 		panic(err)
 	}
 
-	client := sqs.New(session)
+	if *srcRegion == "" {
+		clientSrc = sqs.New(sessionSrc)
+	} else {
+		clientSrc = sqs.New(sessionSrc, aws.NewConfig().WithRegion(*srcRegion))
+	}
+
+	if *destRegion == "" {
+		clientDest = sqs.New(sessionDst)
+	} else {
+		clientDest = sqs.New(sessionDst, aws.NewConfig().WithRegion(*destRegion))
+	}
 
 	maxMessages := int64(10)
 	waitTime := int64(0)
@@ -50,7 +76,7 @@ func main() {
 	lastMessageCount := int(1)
 	// loop as long as there are messages on the queue
 	for {
-		resp, err := client.ReceiveMessage(rmin)
+		resp, err := clientSrc.ReceiveMessage(rmin)
 
 		if err != nil {
 			panic(err)
@@ -79,7 +105,7 @@ func main() {
 					QueueUrl:          dest,
 				}
 
-				_, err := client.SendMessage(&smi)
+				_, err := clientDest.SendMessage(&smi)
 
 				if err != nil {
 					log.Printf("ERROR sending message to destination %v", err)
@@ -92,7 +118,7 @@ func main() {
 					ReceiptHandle: m.ReceiptHandle,
 				}
 
-				if _, err := client.DeleteMessage(dmi); err != nil {
+				if _, err := clientSrc.DeleteMessage(dmi); err != nil {
 					log.Printf("ERROR dequeueing message ID %v : %v",
 						*m.ReceiptHandle,
 						err)
