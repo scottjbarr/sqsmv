@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"sync"
+	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -56,7 +57,7 @@ func main() {
 		MessageAttributeNames: messageAttributeNames,
 	}
 
-	count := int(0)
+	var count int64
 	lastMessageCount := int(1)
 	// loop as long as there are messages on the queue
 	for {
@@ -66,7 +67,7 @@ func main() {
 			panic(err)
 		}
 
-		if count >= *maxMsgsToMove || (lastMessageCount == 0 && len(resp.Messages) == 0) {
+		if count >= int64(*maxMsgsToMove) || (lastMessageCount == 0 && len(resp.Messages) == 0) {
 			// no messages returned twice now, the queue is probably empty
 			log.Printf("done")
 			return
@@ -79,7 +80,7 @@ func main() {
 		wg.Add(len(resp.Messages))
 
 		for _, m := range resp.Messages {
-			if count >= *maxMsgsToMove {
+			if count >= int64(*maxMsgsToMove) {
 				break
 			}
 
@@ -111,8 +112,8 @@ func main() {
 						*m.ReceiptHandle,
 						err)
 				}
-				count++
-				if count >= *maxMsgsToMove {
+				atomic.AddInt64(&count, 1)
+				if count >= int64(*maxMsgsToMove) {
 					return
 				}
 			}(m)
