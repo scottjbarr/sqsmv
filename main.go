@@ -87,8 +87,11 @@ func main() {
 			go func(m *sqs.Message) {
 				defer wg.Done()
 
-				mutex.Lock()
-				defer mutex.Unlock()
+				if count == maxInt {
+					mutex.Lock()
+					defer mutex.Unlock()
+				}
+
 				if count < *maxMsgsToMove {
 					// write the message to the destination queue
 					smi := sqs.SendMessageInput{
