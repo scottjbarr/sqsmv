@@ -6,7 +6,6 @@ import (
 	"math"
 	"os"
 	"sync"
-	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -57,7 +56,8 @@ func main() {
 		MessageAttributeNames: messageAttributeNames,
 	}
 
-	var count int64
+	var mutex = &sync.Mutex{}
+	var count int
 	lastMessageCount := int(1)
 	// loop as long as there are messages on the queue
 	for {
@@ -67,7 +67,7 @@ func main() {
 			panic(err)
 		}
 
-		if count >= int64(*maxMsgsToMove) || (lastMessageCount == 0 && len(resp.Messages) == 0) {
+		if count >= *maxMsgsToMove || (lastMessageCount == 0 && len(resp.Messages) == 0) {
 			// no messages returned twice now, the queue is probably empty
 			log.Printf("done")
 			return
@@ -80,41 +80,42 @@ func main() {
 		wg.Add(len(resp.Messages))
 
 		for _, m := range resp.Messages {
-			if count >= int64(*maxMsgsToMove) {
+			if count >= *maxMsgsToMove {
 				break
 			}
 
 			go func(m *sqs.Message) {
 				defer wg.Done()
 
-				// write the message to the destination queue
-				smi := sqs.SendMessageInput{
-					MessageAttributes: m.MessageAttributes,
-					MessageBody:       m.Body,
-					QueueUrl:          dest,
-				}
+				mutex.Lock()
+				defer mutex.Unlock()
+				if count < *maxMsgsToMove {
+					// write the message to the destination queue
+					smi := sqs.SendMessageInput{
+						MessageAttributes: m.MessageAttributes,
+						MessageBody:       m.Body,
+						QueueUrl:          dest,
+					}
 
-				_, err := client.SendMessage(&smi)
+					_, err := client.SendMessage(&smi)
 
-				if err != nil {
-					log.Printf("ERROR sending message to destination %v", err)
-					return
-				}
+					if err != nil {
+						log.Printf("ERROR sending message to destination %v", err)
+						return
+					}
 
-				// message was sent, dequeue from source queue
-				dmi := &sqs.DeleteMessageInput{
-					QueueUrl:      src,
-					ReceiptHandle: m.ReceiptHandle,
-				}
+					// message was sent, dequeue from source queue
+					dmi := &sqs.DeleteMessageInput{
+						QueueUrl:      src,
+						ReceiptHandle: m.ReceiptHandle,
+					}
 
-				if _, err := client.DeleteMessage(dmi); err != nil {
-					log.Printf("ERROR dequeueing message ID %v : %v",
-						*m.ReceiptHandle,
-						err)
-				}
-				atomic.AddInt64(&count, 1)
-				if count >= int64(*maxMsgsToMove) {
-					return
+					if _, err := client.DeleteMessage(dmi); err != nil {
+						log.Printf("ERROR dequeueing message ID %v : %v",
+							*m.ReceiptHandle,
+							err)
+					}
+					count++
 				}
 			}(m)
 		}
