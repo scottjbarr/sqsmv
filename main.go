@@ -14,15 +14,17 @@ import (
 func main() {
 	src := flag.String("src", "", "source queue")
 	dest := flag.String("dest", "", "destination queue")
+	limit := flag.Int("limit", -1, "limit number of messages moved")
 	flag.Parse()
 
-	if *src == "" || *dest == "" {
+	if *src == "" || *dest == "" || *limit < -1 {
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	log.Printf("source queue : %v", *src)
 	log.Printf("destination queue : %v", *dest)
+	log.Printf("limit : %v", *limit)
 
 	// enable automatic use of AWS_PROFILE like awscli and other tools do.
 	opts := session.Options{
@@ -48,7 +50,8 @@ func main() {
 	}
 
 	lastMessageCount := int(1)
-	// loop as long as there are messages on the queue
+	movedMessageCount := 0
+	// loop as long as there are messages on the queue or we've reached the limit
 	for {
 		resp, err := client.ReceiveMessage(rmin)
 
@@ -58,7 +61,7 @@ func main() {
 
 		if lastMessageCount == 0 && len(resp.Messages) == 0 {
 			// no messages returned twice now, the queue is probably empty
-			log.Printf("done")
+			log.Printf("done, moved %v messages", movedMessageCount)
 			return
 		}
 
@@ -66,10 +69,17 @@ func main() {
 		log.Printf("received %v messages...", len(resp.Messages))
 
 		var wg sync.WaitGroup
-		wg.Add(len(resp.Messages))
 
 		for _, m := range resp.Messages {
 			go func(m *sqs.Message) {
+
+				if *limit != -1 && movedMessageCount >= *limit {
+					return
+				}
+
+				wg.Add(1)
+				movedMessageCount += 1
+
 				defer wg.Done()
 
 				// write the message to the destination queue
@@ -102,5 +112,11 @@ func main() {
 
 		// wait for all jobs from this batch...
 		wg.Wait()
+
+
+		if *limit != -1 && movedMessageCount >= *limit {
+			log.Printf("done, moved %v messages", movedMessageCount)
+			break
+		}
 	}
 }
