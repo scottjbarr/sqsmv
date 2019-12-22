@@ -285,25 +285,20 @@ func getCmdArguments() QueueOperationsRequest {
 	}
 }
 
-func routeRequest(req QueueOperationsRequest, client *SQSClient) bool {
+func routeRequest(req QueueOperationsRequest, client *SQSClient) {
 
-	ran := false
+	if !req.List && len(req.SourceQueue) > 15 && len(req.DestQueue) > 15 && len(req.MessageID) > 10 {
+		client.MoveMessage(req)
+		return
+	}
 
-	if req.List && len(req.SourceQueue) > 15 {
-		// List it
-		ran = true
+	if !req.List && len(req.SourceQueue) > 15 && len(req.DestQueue) > 15 {
+		client.MoveMessages(req)
+		return
+	}
+
+	if !req.List && len(req.SourceQueue) > 15 {
 		client.ListMessages(req)
 	}
 
-	if !ran && !req.List && len(req.SourceQueue) > 15 && len(req.DestQueue) > 15 && len(req.MessageID) > 10 {
-		ran = true
-		client.MoveMessage(req)
-	}
-
-	if !ran && !req.List && len(req.SourceQueue) > 15 && len(req.DestQueue) > 15 {
-		ran = true
-		client.MoveMessages(req)
-	}
-
-	return ran
 }
