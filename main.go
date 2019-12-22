@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"sync"
 
@@ -16,6 +17,7 @@ const (
 	errorSendingMessage = "\nERROR sending message to destination %v\n\n"
 	actionMove          = "Moving"
 	actionCopy          = "Copying"
+	msgCheckAccessLevel = "\nCheck your environment vars, region and make sure you have access to the queues specified.\n"
 )
 
 type QueueOperationsRequest struct {
@@ -68,10 +70,16 @@ func (c *SQSClient) ListMessages(request QueueOperationsRequest) {
 	// loop as long as there are messages on the queue
 	for {
 		resp, err := c.AWSSQSClient.ReceiveMessage(rmin)
-
 		if err != nil {
-			panic(err)
+			fmt.Printf(msgCheckAccessLevel)
+			log.Fatal(err)
+			return
 		}
+
+		if len(resp.Messages) == 0 {
+			return
+		}
+
 		c.MessageCount = c.MessageCount + len(resp.Messages)
 
 		if lastMessageCount == 0 && len(resp.Messages) == 0 {
@@ -86,11 +94,12 @@ func (c *SQSClient) ListMessages(request QueueOperationsRequest) {
 		for _, m := range resp.Messages {
 			log.Printf("MessageId: %s  Body: %s\n", *m.MessageId, *m.Body)
 		}
+		break
 	}
 }
 
 func (c *SQSClient) MoveMessage(request QueueOperationsRequest) {
-	log.Printf("Moving or Copy Message\n\tFrom Queue:\t%s\n\tTo Queue: \t%s\n\tMessageId: \t%s\n", request.SourceQueue, request.DestQueue, request.MessageID)
+	log.Printf("Move or Copy Message\n\tFrom Queue:\t%s\n\tTo Queue: \t%s\n\tMessageId: \t%s\n", request.SourceQueue, request.DestQueue, request.MessageID)
 
 	maxMessages := int64(10)
 	waitTime := int64(0)
@@ -108,7 +117,9 @@ func (c *SQSClient) MoveMessage(request QueueOperationsRequest) {
 	for {
 		resp, err := c.AWSSQSClient.ReceiveMessage(rmin)
 		if err != nil {
-			panic(err)
+			fmt.Printf(msgCheckAccessLevel)
+			log.Fatal(err)
+			return
 		}
 
 		if lastMessageCount == 0 && len(resp.Messages) == 0 {
@@ -140,6 +151,7 @@ func (c *SQSClient) MoveMessage(request QueueOperationsRequest) {
 				_, err := c.AWSSQSClient.SendMessage(&smi)
 
 				if err != nil {
+					fmt.Printf(msgCheckAccessLevel)
 					log.Printf(errorSendingMessage, err)
 					return
 				}
@@ -164,7 +176,7 @@ func (c *SQSClient) MoveMessage(request QueueOperationsRequest) {
 
 func (c *SQSClient) MoveMessages(request QueueOperationsRequest) {
 
-	log.Printf("Moving Messages\nFrom Queue:\t%s\nTo Queue: \t%s\n", request.SourceQueue, request.DestQueue)
+	log.Printf("Move or Copy Messages\nFrom Queue:\t%s\nTo Queue: \t%s\n", request.SourceQueue, request.DestQueue)
 
 	maxMessages := int64(10)
 	waitTime := int64(0)
@@ -182,10 +194,10 @@ func (c *SQSClient) MoveMessages(request QueueOperationsRequest) {
 	for {
 		resp, err := c.AWSSQSClient.ReceiveMessage(rmin)
 		if err != nil {
-			panic(err)
+			fmt.Printf(msgCheckAccessLevel)
+			log.Fatal(err)
+			return
 		}
-
-		// log.Printf(" >Messages Fetched: %d\n", len(resp.Messages))
 
 		if lastMessageCount == 0 && len(resp.Messages) == 0 {
 			// no messages returned twice now, the queue is probably empty
@@ -221,6 +233,7 @@ func (c *SQSClient) MoveMessages(request QueueOperationsRequest) {
 				_, err := c.AWSSQSClient.SendMessage(&smi)
 
 				if err != nil {
+					fmt.Printf(msgCheckAccessLevel)
 					log.Printf(errorSendingMessage, err)
 					return
 				}
