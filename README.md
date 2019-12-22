@@ -2,32 +2,41 @@
 
 Move all messages from one SQS queue, to another.
 
-
 ## Installation
 
 ### Source
 
     go get github.com/scottjbarr/sqsmv
 
-
 ### Binaries
 
 Download the appropriate binary from the
 [Releases](https://github.com/scottjbarr/sqsmv/releases) page.
 
-
 ## Configuration
 
-The `AWS_SECRET_ACCESS_KEY`, `AWS_ACCESS_KEY_ID`, and ,`AWS_REGION`
+The `AWS_SECRET_ACCESS_KEY`, `AWS_ACCESS_KEY_ID`, and ,`AWS_DEFAULT_REGION`
 environment variables must be set.
-
 
 ## Usage
 
-Supply source and destination URL endpoints.
+    sqsmv -src    <source queue URL>
+          -dest   <destination queue URL>
+          -msgid  MessageId to be copies or moved
+          -l      lists all message specified using the -src parameter
+          -nodel  copy only, do not dequeue messages from source queue
+
+To list the content of a queue, supply the queue URI and set the switch -l.
+
+    sqsmv -src https://region.queue.amazonaws.com/123/queue-a -l
+
+To move a single message, supply source and destination URL endpoints, along with the MessageID of the message to be moved.
+
+    sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b -msgid d623763f-21df-4bc8-9bb6-c93eb98f346d
+
+To move all messages, supply source and destination URL endpoints.
 
     sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b
-
 
 ## Seeing is believing :)
 
@@ -38,7 +47,6 @@ Create some SQS messages to play with using the AWS CLI.
             --queue-url https://ap-southeast-2.queue.amazonaws.com/123/wat-a
             --message-body "{\"id\": $i}"
     done
-
 
 ## License
 
