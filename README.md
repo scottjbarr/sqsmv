@@ -28,6 +28,9 @@ Supply source and destination URL endpoints.
 
     sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b
 
+Optionally supply also the awscli [named profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) to use.
+
+    sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b -aws-profile myprofile
 
 ## Seeing is believing :)
 
