@@ -14,6 +14,7 @@ import (
 func main() {
 	src := flag.String("src", "", "source queue")
 	dest := flag.String("dest", "", "destination queue")
+	awsProfile := flag.String("aws-profile", "", "AWS profile")
 	flag.Parse()
 
 	if *src == "" || *dest == "" {
@@ -21,12 +22,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Printf("source queue : %v", *src)
-	log.Printf("destination queue : %v", *dest)
+	log.Printf("source queue: %v", *src)
+	log.Printf("destination queue: %v", *dest)
+	log.Printf("AWS profile: %v", *awsProfile)
 
 	// enable automatic use of AWS_PROFILE like awscli and other tools do.
 	opts := session.Options{
 		SharedConfigState: session.SharedConfigEnable,
+	}
+
+	// enable AWS_PROFILE selected by name (useful if you configured multiple profiles in awscli)
+	if *awsProfile != "" {
+		opts.Profile = *awsProfile
 	}
 
 	session, err := session.NewSessionWithOptions(opts)
