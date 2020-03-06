@@ -8,10 +8,12 @@ import (
 )
 
 func Run(stopCh <-chan struct{}) {
-	klog.Info("starting sqsmv")
-	go sqsSync(1987, "", "", stopCh)
+	klog.Info("Starting sqsmv")
+	go sqsSync(1987, "https://sqs.ap-southeast-1.amazonaws.com/754922593538/practodevsingapore-accounts-loginotp-latest",
+		"https://sqs.ap-south-1.amazonaws.com/754922593538/practodevmumbai-accounts-loginotp-latest", stopCh)
+
 	<-stopCh
-	klog.Info("shutting down sqsmv")
+	klog.Info("Shutting down sqsmv")
 }
 
 func sqsSync(id int, srcQueue string, destQueue string, stopCh <-chan struct{}) {
@@ -20,7 +22,7 @@ func sqsSync(id int, srcQueue string, destQueue string, stopCh <-chan struct{}) 
 	go longPoll(id, srcQueue, longPollCh, longPollResumeCh, stopCh)
 
 	klog.Infof(
-		"%d | sqsSync started src: %s, dest: %s",
+		"%d | sqsSync starting from src: %s => dest: %s",
 		id,
 		srcQueue,
 		destQueue,
@@ -28,12 +30,12 @@ func sqsSync(id int, srcQueue string, destQueue string, stopCh <-chan struct{}) 
 	for {
 		select {
 		case <-longPollCh:
-			klog.Infof("%d | sqsSync triggering sqsMv as long poll found messages", id)
+			klog.Infof("%d | sqsSync is triggering sqsMv", id)
 			sqsMv(id, srcQueue, destQueue)
-			klog.Infof("%d | sqsSync sees sqsMv has finished operation", id)
+			klog.Infof("%d | sqsMv is done processing", id)
 			longPollResumeCh <- 0
 		case <-stopCh:
-			klog.Infof("%d | sqsSync shutting down gracefully.", id)
+			klog.Infof("%d | sqsSync is shutting down gracefully.", id)
 			return
 		}
 	}
@@ -44,12 +46,12 @@ func longPoll(
 	id int, queue string, longPollCh chan<- int32,
 	longPollResumeCh <-chan int,
 	stopCh <-chan struct{}) {
-	klog.Infof("%d | longPoll started", id)
+	klog.Infof("%d | longPolling has started", id)
 
 	for {
 		select {
 		case <-stopCh:
-			klog.Infof("%d | longPoll stopping", id)
+			klog.Infof("%d | longPolling is shutting down gracefully.", id)
 			return
 		default:
 			messages, err := longPollReceiveMessage(queue)
@@ -60,13 +62,13 @@ func longPoll(
 				continue
 			}
 			// trigger sqsmv to start moving messages
-			klog.Infof("%d | longPoll has found messages in queue", id)
+			klog.Infof("%d | longPolling found messages in queue", id)
 			longPollCh <- messages
 
 			// longPolling should sleep until told to start again
-			klog.Infof("%d | longPoll waiting to be started again", id)
+			klog.Infof("%d | longPolling is sleeping", id)
 			<-longPollResumeCh
-			klog.Infof("%d | longPoll started again", id)
+			klog.Infof("%d | longPolling has started again", id)
 		}
 	}
 }
@@ -78,7 +80,7 @@ func sqsMv(id int, srcQueue string, destQueue string) {
 	}
 
 	if len(messages) == 0 {
-		klog.Fatalf("%d | messages received should not be 0 since long-poll had found messages. Investigate!", id)
+		klog.Fatalf("%d | messages received should not be 0 since longPolling had found messages. Investigate!", id)
 	}
 	klog.Infof("%d | sqsMv is operating on %v messages", id, len(messages))
 
@@ -89,13 +91,13 @@ func sqsMv(id int, srcQueue string, destQueue string) {
 		go func(id int, m *sqs.Message) {
 			defer wg.Done()
 			// write message to destination
-			err := writeMessage(m, srcQueue)
+			err := writeMessage(m, destQueue)
 			if err != nil {
 				klog.Errorf("%d | error writing message to destination, err: %v", id, err)
 			}
 
 			// delete message from source which was just written
-			err = deleteMessage(m, destQueue)
+			err = deleteMessage(m, srcQueue)
 			if err != nil {
 				klog.Fatalf(
 					"%d | error deleting message id %v, err: %v",
