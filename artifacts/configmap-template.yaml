@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sqsmv
+  namespace: central
+data:
+  sqsmv.yaml: |
+    awsAccessKeyId: "{{ SQSMV_AWS_ACCESS_KEY_ID }}"
+    awsSecertAccessKey: "{{ SQSMV_AWS_SECRET_ACCESS_KEY }}"
