@@ -1,44 +1,45 @@
 # sqsmv
 
-Move all messages from one SQS queue, to another.
+Move all the messages from one SQS queue, to another. This sqsmv fork, runs as a daemon. It has all the automation to run on Kubernetes as a worker Deployment.
 
+This worker operates on a Configuration (config map)[./artifcats/configmap-template.yaml]. You can keep updating the configuration from an external process and delete the sqsmv pod. The new pod will then start moving the messages based on the new configuration.
+
+It runs a separate go routine for every item specified in the Configuration.
+
+We are using this service to have a downtime free migration of SQS across region for multiple products across the organization.
 
 ## Installation
 
-### Source
+- Create the env.sh and source it
+```
+cp .envs.sh.sample .envs.sh
+# vim .envs.sh (and add values)
+source .env.sh
+```
 
-    go get github.com/scottjbarr/sqsmv
+- Create the first time configuration. Later you can modify the configmap from some external process or manually.
+```
+export KUBE_CONTEXT=k8sx.domain
+make create-firstime-config
+```
 
+- Install `sqsmv` in your Kubernetes cluster.
+```
+make deploy
+```
 
-### Binaries
+## Contributing
+```
+$ make build
+making bin/darwin_amd64/sqsmv
 
-Download the appropriate binary from the
-[Releases](https://github.com/scottjbarr/sqsmv/releases) page.
+$ sudo bin/darwin_amd64/sqsmv run
+I0305 19:39:30.652967   89271 config.go:42] Using config file: /etc/config/sqsmv.yaml
+I0305 17:32:50.128648   82452 sqsmv.go:8] Starting sqsmv
 
-
-## Configuration
-
-The `AWS_SECRET_ACCESS_KEY`, `AWS_ACCESS_KEY_ID`, and ,`AWS_REGION`
-environment variables must be set.
-
-
-## Usage
-
-Supply source and destination URL endpoints.
-
-    sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b
-
-
-## Seeing is believing :)
-
-Create some SQS messages to play with using the AWS CLI.
-
-    for i in {0..24..1}; do
-        aws sqs send-message \
-            --queue-url https://ap-southeast-2.queue.amazonaws.com/123/wat-a
-            --message-body "{\"id\": $i}"
-    done
-
+$ make push
+$ make deploy
+```
 
 ## License
 
@@ -47,3 +48,7 @@ The MIT License (MIT)
 Copyright (c) 2016-2018 Scott Barr
 
 See [LICENSE.md](LICENSE.md)
+
+## Thanks
+
+https://github.com/scottjbarr/sqsmv
