@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: sqsmv
+ namespace: central 
+ labels:
+   app: sqsmv
+spec:
+ replicas: 1
+ selector:
+   matchLabels:
+     app: sqsmv
+ template:
+   metadata:
+     labels:
+       app: sqsmv
+   spec:
+     volumes:
+     - name: sqsmv-volume
+       configMap:
+         name: sqsmv
+     tolerations:
+     - effect: NoExecute
+       operator: Exists
+     - effect: NoSchedule
+       operator: Exists
+     containers:
+     - name: sqsmv
+       env:
+       - name: AWS_ACCESS_KEY_ID
+         value: {{ SQSMV_AWS_ACCESS_KEY_ID }}
+       - name: AWS_SECRET_ACCESS_KEY
+         value: {{ SQSMV_AWS_SECRET_ACCESS_KEY }}
+       image: practodev/sqsmv:{{ SQSMV_VERSION }}
+       imagePullPolicy: Always
+       command:
+       - /sqsmv
+       - run
+       volumeMounts:
+       - name: sqsmv-volume
+         mountPath: /etc/sqsmv.yaml
+       resources:
+         limits:
+           cpu: 100m
+           memory: 100Mi
+         requests:
+           cpu: 10m
+           memory: 20Mi
