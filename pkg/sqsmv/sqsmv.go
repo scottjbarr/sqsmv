@@ -10,7 +10,6 @@ import (
 func Run(stopCh <-chan struct{}) {
 	klog.Info("starting sqsmv")
 	go sqsSync(1987, "", "", stopCh)
-
 	<-stopCh
 	klog.Info("shutting down sqsmv")
 }
@@ -29,9 +28,9 @@ func sqsSync(id int, srcQueue string, destQueue string, stopCh <-chan struct{}) 
 	for {
 		select {
 		case <-longPollCh:
-			klog.Infof("%d | sqsSync triggering sqsMv as long poll found messages")
+			klog.Infof("%d | sqsSync triggering sqsMv as long poll found messages", id)
 			sqsMv(id, srcQueue, destQueue)
-			klog.Infof("%d | sqsSync sees sqsMv has finished operation")
+			klog.Infof("%d | sqsSync sees sqsMv has finished operation", id)
 			longPollResumeCh <- 0
 		case <-stopCh:
 			klog.Infof("%d | sqsSync shutting down gracefully.", id)
@@ -55,19 +54,19 @@ func longPoll(
 		default:
 			messages, err := longPollReceiveMessage(queue)
 			if err != nil {
-				klog.Fatalf("%d | error in longPolling, err: %v", err)
+				klog.Fatalf("%d | error in longPolling, err: %v", id, err)
 			}
 			if messages == 0 {
 				continue
 			}
 			// trigger sqsmv to start moving messages
-			klog.Infof("%d | longPoll has found messages in queue")
+			klog.Infof("%d | longPoll has found messages in queue", id)
 			longPollCh <- messages
 
 			// longPolling should sleep until told to start again
-			klog.Infof("%d | longPoll waiting to be started again")
+			klog.Infof("%d | longPoll waiting to be started again", id)
 			<-longPollResumeCh
-			klog.Infof("%d | longPoll started again")
+			klog.Infof("%d | longPoll started again", id)
 		}
 	}
 }
@@ -75,13 +74,13 @@ func longPoll(
 func sqsMv(id int, srcQueue string, destQueue string) {
 	messages, err := receiveMessage(srcQueue)
 	if err != nil {
-		klog.Fatalf("%d | error receiving messages, err: %v", err)
+		klog.Fatalf("%d | error receiving messages, err: %v", id, err)
 	}
 
 	if len(messages) == 0 {
-		klog.Fatalf("%d | messages received should not be 0 since long-poll had found messages. Investigate!")
+		klog.Fatalf("%d | messages received should not be 0 since long-poll had found messages. Investigate!", id)
 	}
-	klog.Infof("%d | sqsMv is operating on %v messages", len(messages))
+	klog.Infof("%d | sqsMv is operating on %v messages", id, len(messages))
 
 	var wg sync.WaitGroup
 	wg.Add(len(messages))
