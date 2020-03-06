@@ -6,5 +6,5 @@ metadata:
 data:
   sqsmv.yaml: |
     queues:
-    - source: "https://ap-southeast-1.queue.amazonaws.com/123/wat-a"
-      destination: "https://ap-south-1.queue.amazonaws.com/123/wat-a"
+    - source: https://ap-southeast-1.queue.amazonaws.com/123/queue-1
+      destination: https://ap-south-1.queue.amazonaws.com/123/queue-1
