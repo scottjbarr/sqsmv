@@ -38,7 +38,7 @@ spec:
        - run
        volumeMounts:
        - name: sqsmv-volume
-         mountPath: /etc/sqsmv.yaml
+         mountPath: /etc/config/sqsmv.yaml
        resources:
          limits:
            cpu: 100m
