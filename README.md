@@ -38,7 +38,11 @@ make deploy
 kubectl get pods -n central | grep sqsmv | awk '{print $1}' | xargs -I {} kubectl logs -f {} -n central
 ```
 
-- Reloading `sqsmv` with the new set of queues: We are updating the `sqsmv` queues list by updating the config map with an external process and re-creating the sqsmv pod. This helps us in having a downtime free sqs migration across region.
+- **Reloading** `sqsmv` with the new set of queues. Just edit config map and delete the pod. We are updating the `sqsmv` queues list by updating the config map by an external process and re-creating the sqsmv pod. This helps us in having a downtime free sqs migration across region.
+```
+kubectl edit cm -n central sqsmv
+make deploy
+```
 
 ## Seeing is believing :)
 ```
