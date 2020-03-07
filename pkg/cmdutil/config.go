@@ -2,10 +2,8 @@ package cmdutil
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-
 	"k8s.io/klog"
+	"path/filepath"
 
 	"github.com/spf13/viper"
 )
@@ -15,20 +13,8 @@ import (
 // instance.
 func InitConfig(name string) error {
 	cfgDir := "/etc/config"
-	if _, statErr := os.Stat(cfgDir); os.IsNotExist(statErr) {
-		// #nosec
-		if mkdirErr := os.Mkdir(cfgDir, 0755); mkdirErr != nil {
-			return mkdirErr
-		}
-	}
 	cfgName := fmt.Sprintf("%s.yaml", name)
 	cfgPath := filepath.Join(cfgDir, cfgName)
-
-	fobj, err := os.OpenFile(cfgPath, os.O_CREATE|os.O_WRONLY, 0644) // #nosec
-	if err != nil {
-		return err
-	}
-	defer fobj.Close() // nolint: errcheck
 
 	viper.SetConfigFile(cfgPath)
 	viper.AutomaticEnv()
