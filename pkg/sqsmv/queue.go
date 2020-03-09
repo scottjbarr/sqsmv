@@ -16,8 +16,6 @@ type Config struct {
 type Queue interface {
 	Describe(queueName string) (QueueDetails, error)
 	Create(queueName string, queueDetails QueueDetails) (string, error)
-	Modify(queueName string, queueDetails QueueDetails) error
-	Delete(queueName string) error
 }
 
 type QueueDetails struct {

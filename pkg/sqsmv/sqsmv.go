@@ -2,6 +2,7 @@ package sqsmv
 
 import (
 	"fmt"
+	"time"
 	"k8s.io/klog"
 	"sync"
 
@@ -51,6 +52,7 @@ func sqsMv(id string, srcQueueURL string, destQueueURL string) {
 			klog.Fatalf("error getting sqs queue, queue: %v, err: %v", srcQueue.url, err)
 		}
 		klog.Errorf("%d | source queue does not exist, queue: %v, err: %v", id, srcQueue.url, err)
+		time.Sleep(time.Second * 20)
 		return
 	}
 

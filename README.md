@@ -11,10 +11,10 @@ cp .envs.sh.sample .envs.sh
 
 - Update AWS secrets in `.envs.sh` and source it
 ```
-source .env.sh
+source .envs.sh
 ```
 
-- Create the config map
+- Create the config map. Update the queues manually for the first time.
 ```
 apiVersion: v1
 kind: ConfigMap
@@ -26,6 +26,9 @@ data:
     queues:
     - source: https://ap-southeast-1.queue.amazonaws.com/123/wat-a
       destination: https://ap-south-1.queue.amazonaws.com/123/wat-a
+```
+```
+kubectl create -f ./artifacts/configmap-example.yaml
 ```
 
 - Install `sqsmv` in your Kubernetes cluster.
