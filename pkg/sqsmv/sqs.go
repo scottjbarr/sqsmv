@@ -27,11 +27,12 @@ func getSQSClient(queue string) *sqs.SQS {
 	return sqs.New(sess)
 }
 
-func receiveMessage(queue string) ([]*sqs.Message, error) {
+func receiveMessage(queue string, longPollSeconds int64) ([]*sqs.Message, error) {
 	resp, err := getSQSClient(queue).ReceiveMessage(&sqs.ReceiveMessageInput{
 		QueueUrl:              aws.String(queue),
+		AttributeNames:        aws.StringSlice([]string{"SentTimestamp"}),
 		MaxNumberOfMessages:   aws.Int64(10),
-		WaitTimeSeconds:       aws.Int64(0),
+		WaitTimeSeconds:       aws.Int64(longPollSeconds),
 		MessageAttributeNames: aws.StringSlice([]string{"All"}),
 	})
 	if err != nil {
@@ -47,8 +48,8 @@ func longPollReceiveMessage(queue string) (int32, error) {
 		AttributeNames:        aws.StringSlice([]string{"SentTimestamp"}),
 		VisibilityTimeout:     aws.Int64(0),
 		MaxNumberOfMessages:   aws.Int64(1),
-		MessageAttributeNames: aws.StringSlice([]string{"All"}),
 		WaitTimeSeconds:       aws.Int64(20),
+		MessageAttributeNames: aws.StringSlice([]string{"All"}),
 	})
 	if err != nil {
 		return 0, err

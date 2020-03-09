@@ -82,6 +82,15 @@ $ make deploy
 ```
 **Note:** For PRs, `git push` and not `make push` :)
 
+## Troubleshoot
+
+Find the queue id you want to troubleshoot and grep for that queue_id
+```
+kubectl logs -n central sqsmv-xxx |  grep queue_name | grep "sqsSync starting from src"
+kubectl logs -n central sqsmv-xx | grep queue_id
+```
+
+
 ## License
 
 The MIT License (MIT)
