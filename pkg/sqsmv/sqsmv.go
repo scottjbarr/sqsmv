@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
-func Run(queues []Queue, stopCh <-chan struct{}) {
+func Run(queues []QueueConfig, stopCh <-chan struct{}) {
 	klog.Info("Starting sqsmv")
 
 	for cnt, queue := range queues {
@@ -43,9 +43,36 @@ func sqsSync(id string, srcQueue string, destQueue string, stopCh <-chan struct{
 	}
 }
 
-func sqsMv(id string, srcQueue string, destQueue string) {
+func sqsMv(id string, srcQueueURL string, destQueueURL string) {
+	srcQueue := NewSQSQueue(srcQueueURL)
+	srcQueueDetails, err := srcQueue.Describe()
+	if err != nil {
+		if err != ErrQueueDoesNotExist {
+			klog.Fatalf("error getting sqs queue, queue: %v, err: %v", srcQueue.url, err)
+		}
+		klog.Errorf("%d | source queue does not exist, queue: %v, err: %v", id, srcQueue.url, err)
+		return
+	}
+
+	destQueue := NewSQSQueue(destQueueURL)
+	destQueueDetails, err := destQueue.Describe()
+	if err != nil {
+		if err != ErrQueueDoesNotExist {
+			klog.Fatalf("error getting sqs queue, queue: %v, err: %v", destQueue.url, err)
+		}
+		klog.Infof("%s | destination queue does not exist, queue: %v", id, destQueue.url)
+		klog.Infof("%s | creating destination queue", id)
+		destQueueDetails = srcQueueDetails
+		destQueueDetails.QueueURL = destQueue.url
+		_, err = destQueue.Create(destQueueDetails)
+		if err != nil {
+			klog.Fatalf("%s | error creating destination queue, err: %v", id, err)
+		}
+		klog.Infof("%s | created destination queue", id)
+	}
+
 	klog.Infof("%s | longPolling", id)
-	messages, err := receiveMessage(srcQueue, 20)
+	messages, err := receiveMessage(srcQueue.url, 20)
 	if err != nil {
 		klog.Fatalf("%s | error receiving messages, err: %v", id, err)
 	}
@@ -54,7 +81,7 @@ func sqsMv(id string, srcQueue string, destQueue string) {
 		return
 	}
 
-	klog.Infof("%s | operating on %v messages", id, len(messages))
+	klog.Infof("%s | moving %v messages", id, len(messages))
 
 	var wg sync.WaitGroup
 	wg.Add(len(messages))
@@ -63,14 +90,14 @@ func sqsMv(id string, srcQueue string, destQueue string) {
 		go func(id string, m *sqs.Message) {
 			defer wg.Done()
 			// write message to destination
-			err := writeMessage(m, destQueue)
+			err := writeMessage(m, destQueue.url)
 			if err != nil {
 				klog.Errorf("%s | error writing message to destination, err: %v", id, err)
 				return
 			}
 
 			// delete message from source which was just written
-			err = deleteMessage(m, srcQueue)
+			err = deleteMessage(m, srcQueue.url)
 			if err != nil {
 				klog.Fatalf(
 					"%s | error deleting message id %v, err: %v",

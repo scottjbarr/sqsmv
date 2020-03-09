@@ -55,16 +55,21 @@ done
 
 ```
 $ bin/darwin_amd64/sqsmv run
-I0307 01:01:46.620534   33099 config.go:40] Using config file: /etc/config/sqsmv.yaml
-I0307 01:01:46.621059   33099 sqsmv.go:12] Starting sqsmv
-I0307 01:01:46.621108   33099 sqsmv.go:28] queue-1 | sqsSync starting from src: https://sqs.ap-southeast-1.amazonaws.com/123/queue-1 => dest: https://sqs.ap-south-1.amazonaws.com/123/queue-1
-I0307 01:01:46.621170   33099 sqsmv.go:58] queue-1 | longPolling has started
-I0307 01:04:11.472369   33099 sqsmv.go:74] queue-1 | longPolling found messages in queue
-I0307 01:04:11.472627   33099 sqsmv.go:78] queue-1 | longPolling is sleeping
-I0307 01:04:11.472657   33099 sqsmv.go:42] queue-1 | sqsSync is triggering sqsMv
-I0307 01:04:11.540273   33099 sqsmv.go:94] queue-1 | sqsMv is operating on 1 messages
-I0307 01:04:11.734887   33099 sqsmv.go:44] queue-1 | sqsMv is done processing
-I0307 01:04:11.734941   33099 sqsmv.go:80] queue-1 | longPolling has started again
+I0309 18:51:02.231771   66861 config.go:26] Using config file: /etc/config/sqsmv.yaml
+I0309 18:51:02.232248   66861 sqsmv.go:12] Starting sqsmv
+I0309 18:51:02.232300   66861 sqsmv.go:28] queue-1 | sqsSync starting from src: https://sqs.ap-southeast-1.amazonaws.com/123/queue-1 => dest: https://sqs.ap-south-1.amazonaws.com/123/queue-1
+I0309 18:51:02.939755   66861 sqsmv.go:63] queue-1 | destination queue does not exist, queue: https://sqs.ap-south-1.amazonaws.com/123/queue-1
+I0309 18:51:02.939785   66861 sqsmv.go:64] queue-1 | creating destination queue
+I0309 18:51:03.020776   66861 sqsmv.go:71] queue-1 | created destination queue
+I0309 18:51:03.020823   66861 sqsmv.go:74] queue-1 | longPolling
+I0309 18:51:13.679031   66861 sqsmv.go:84] queue-1 | moving 1 messages
+I0309 18:51:13.953909   66861 sqsmv.go:74] queue-1 | longPolling
+I0309 18:51:25.261180   66861 sqsmv.go:84] queue-1 | moving 1 messages
+I0309 18:51:25.541479   66861 sqsmv.go:74] queue-1 | longPolling
+I0309 18:51:27.705795   66861 sqsmv.go:84] queue-1 | moving 1 messages
+I0309 18:51:28.013757   66861 sqsmv.go:74] queue-1 | longPolling
+I0309 18:51:33.846544   66861 sqsmv.go:84] queue-1 | moving 1 messages
+I0309 18:51:34.129340   66861 sqsmv.go:74] queue-1 | longPolling
 ```
 **Note:** Logs are shown with ids of the queue (`queue-1` is the `id` this example). So that it easier to debug(using `grep`) each queue source-destination configuration.
 
