@@ -200,6 +200,6 @@ deploy:
 	@echo "Creating kubernetes deployment at: ./artifacts/deployment.yaml"
 	@cp artifacts/deployment-template.yaml artifacts/deployment.yaml
 	VERSION=$(VERSION) ./hack/generate.sh artifacts/deployment.yaml
-	@kubectl --context=$(KUBE_CONTEXT) delete deploy -ncentral sqsmv || @echo sqsmv deployment not found
+	@kubectl --context=$(KUBE_CONTEXT) delete deploy -ncentral sqsmv
 	@kubectl --context=$(KUBE_CONTEXT) apply -f artifacts/deployment.yaml || @kubectl --context=$(KUBE_CONTEXT) create -f artifacts/deployment.yaml
 	@kubectl --context=$(KUBE_CONTEXT) get pods -n central | grep sqsmv
