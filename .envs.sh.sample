@@ -1,0 +1,3 @@
+#!/bin/bash
+export SQSMV_AWS_ACCESS_KEY_ID="sample-aws-access-key-id"
+export SQSMV_AWS_SECRET_ACCESS_KEY="sample-secret-access-key"
