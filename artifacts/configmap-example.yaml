@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sqsmv
+  namespace: central
+data:
+  sqsmv.yaml: |
+    queues:
+    - source: https://ap-southeast-1.queue.amazonaws.com/123/queue-1
+      destination: https://ap-south-1.queue.amazonaws.com/123/queue-1
