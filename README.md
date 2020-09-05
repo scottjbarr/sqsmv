@@ -1,6 +1,6 @@
 # sqsmv
 
-Keep moving messages between a list of two SQS queues.
+Keep moving messages between a list of two SQS queues. It runs as a daemon or worker process which keeps moving messages.
 
 ## Installation
 
