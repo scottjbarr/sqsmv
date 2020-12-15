@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"regexp"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -21,8 +22,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Printf("source queue : %v", *src)
-	log.Printf("destination queue : %v", *dest)
+	re := regexp.MustCompile(`[a-z]{2}-(?:north|south|east|west)[^-]*-\d`)
+	srcRegion := re.FindString(*src)
+	destRegion := re.FindString(*dest)
+
+	log.Printf("source queue : %v (%v)", *src, srcRegion)
+	log.Printf("destination queue : %v (%v)", *dest, destRegion)
 
 	// enable automatic use of AWS_PROFILE like awscli and other tools do.
 	opts := session.Options{
@@ -34,7 +39,8 @@ func main() {
 		panic(err)
 	}
 
-	client := sqs.New(session)
+	srcClient := sqs.New(session, aws.NewConfig().WithRegion(srcRegion))
+	destClient := sqs.New(session, aws.NewConfig().WithRegion(destRegion))
 
 	maxMessages := int64(10)
 	waitTime := int64(0)
@@ -50,7 +56,7 @@ func main() {
 	lastMessageCount := int(1)
 	// loop as long as there are messages on the queue
 	for {
-		resp, err := client.ReceiveMessage(rmin)
+		resp, err := srcClient.ReceiveMessage(rmin)
 
 		if err != nil {
 			panic(err)
@@ -79,7 +85,7 @@ func main() {
 					QueueUrl:          dest,
 				}
 
-				_, err := client.SendMessage(&smi)
+				_, err := destClient.SendMessage(&smi)
 
 				if err != nil {
 					log.Printf("ERROR sending message to destination %v", err)
@@ -92,7 +98,7 @@ func main() {
 					ReceiptHandle: m.ReceiptHandle,
 				}
 
-				if _, err := client.DeleteMessage(dmi); err != nil {
+				if _, err := srcClient.DeleteMessage(dmi); err != nil {
 					log.Printf("ERROR dequeueing message ID %v : %v",
 						*m.ReceiptHandle,
 						err)
