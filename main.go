@@ -14,27 +14,27 @@ import (
 func main() {
 	src := flag.String("src", "", "source queue")
 	dest := flag.String("dest", "", "destination queue")
+	clients := flag.Int("clients", 1, "number of clients")
 	flag.Parse()
 
-	if *src == "" || *dest == "" {
+	if *src == "" || *dest == "" || *clients < 1 {
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	log.Printf("source queue : %v", *src)
 	log.Printf("destination queue : %v", *dest)
+	log.Printf("number of clients : %v", *clients)
 
 	// enable automatic use of AWS_PROFILE like awscli and other tools do.
 	opts := session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}
 
-	session, err := session.NewSessionWithOptions(opts)
+	sess, err := session.NewSessionWithOptions(opts)
 	if err != nil {
 		panic(err)
 	}
-
-	client := sqs.New(session)
 
 	maxMessages := int64(10)
 	waitTime := int64(0)
@@ -47,7 +47,25 @@ func main() {
 		MessageAttributeNames: messageAttributeNames,
 	}
 
+	var wg sync.WaitGroup
+	defer wg.Done()
+	for i := 1; i <= *clients; i++ {
+		wg.Add(i)
+		go transferMessages(sess, rmin, dest, &wg)
+	}
+	wg.Wait()
+
+	log.Println("all done")
+}
+
+//transferMessages loops, transferring a number of messages from the src to the dest at an interval.
+func transferMessages(theSession *session.Session, rmin *sqs.ReceiveMessageInput, dest *string, wgOuter *sync.WaitGroup) {
+	client := sqs.New(theSession)
+
 	lastMessageCount := int(1)
+
+	defer wgOuter.Done()
+
 	// loop as long as there are messages on the queue
 	for {
 		resp, err := client.ReceiveMessage(rmin)
@@ -88,7 +106,7 @@ func main() {
 
 				// message was sent, dequeue from source queue
 				dmi := &sqs.DeleteMessageInput{
-					QueueUrl:      src,
+					QueueUrl:      rmin.QueueUrl,
 					ReceiptHandle: m.ReceiptHandle,
 				}
 
