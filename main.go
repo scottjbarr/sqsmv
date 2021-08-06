@@ -59,7 +59,7 @@ func main() {
 }
 
 //transferMessages loops, transferring a number of messages from the src to the dest at an interval.
-func transferMessages(theSession *session.Session, rMin *sqs.ReceiveMessageInput, dest *string, wgOuter *sync.WaitGroup) {
+func transferMessages(theSession *session.Session, rmin *sqs.ReceiveMessageInput, dest *string, wgOuter *sync.WaitGroup) {
 	client := sqs.New(theSession)
 
 	lastMessageCount := int(1)
@@ -68,7 +68,7 @@ func transferMessages(theSession *session.Session, rMin *sqs.ReceiveMessageInput
 
 	// loop as long as there are messages on the queue
 	for {
-		resp, err := client.ReceiveMessage(rMin)
+		resp, err := client.ReceiveMessage(rmin)
 
 		if err != nil {
 			panic(err)
@@ -106,7 +106,7 @@ func transferMessages(theSession *session.Session, rMin *sqs.ReceiveMessageInput
 
 				// message was sent, dequeue from source queue
 				dmi := &sqs.DeleteMessageInput{
-					QueueUrl:      rMin.QueueUrl,
+					QueueUrl:      rmin.QueueUrl,
 					ReceiptHandle: m.ReceiptHandle,
 				}
 
