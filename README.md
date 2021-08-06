@@ -28,9 +28,9 @@ Supply source and destination URL endpoints.
 
     sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b
 
-To run jobs in parallel, use -numClients parameter:
+To run jobs in parallel, use -clients parameter:
 
-    sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b -numClients 8
+    sqsmv -src https://region.queue.amazonaws.com/123/queue-a -dest https://region.queue.amazonaws.com/123/queue-b -clients 8
 
 ## Seeing is believing :)
 
