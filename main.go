@@ -48,7 +48,6 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	defer wg.Done()
 	for i := 1; i <= *clients; i++ {
 		wg.Add(i)
 		go transferMessages(sess, rmin, dest, &wg)
